@@ -1,0 +1,45 @@
+body {
+	background-color: #0099CB;
+}
+
+input[type=text] {
+    padding: 10px;
+    border-radius: 5px;
+    border-width: 0px;
+}
+
+.container {
+	width: 80%;
+    height: 100%;
+    margin: 60px auto;
+}
+
+.chat {
+    background-color: white;
+    border-radius: 5px;
+    width: 100%;
+    height: 70%;
+}
+
+.input {
+    display: table;
+    margin: auto;
+    padding: 10px;
+}
+
+.messagebox {
+    display: table-cell;
+    width: 500px;
+    height: 40px;
+    margin-right: 10px;
+}
+
+.sendbutton {
+    display: table-cell;
+    width: 90px;
+    height: 40px;
+    background: #EEB211;
+    border: 0;
+    border-radius: 5px;
+    color: currentColor;
+}
