@@ -2,14 +2,26 @@
 	<head>
 		<title>Flooder</title>
 		<link rel="stylesheet" type="text/css" href="css/sheet.css">
+		<script src="js/knockout-3.3.0.js"></script>
+		<script src="js/script.js"></script>
 	</head>
 	<body>
 		<div class="container">
-			<div class="chat">
+			<div id="chat">
+				<table>
+					<tbody data-bind="foreach: messages">
+						<tr valign="top" class="message">
+							<td class="msgauthor" data-bind="text: name"></td>
+							<td class="msgauthor">:</td>
+							<td class="msgtext" data-bind="text: message"></td>
+							<td class="msgtime" data-bind="text: time"></td>
+						</tr>
+					</tbody>
+				</table>
 			</div>
 			<div class="input">
-				<input type="text" class="messagebox" placeholder="Type your message here..."></input>
-				<input type="button" class="sendbutton" value="Send"></input>
+				<input type="text" id="messagebox" data-bind="textInput: messagetext, event: { keypress: keypressHandler }" placeholder="Type your message here..." autofocus></input>
+				<input type="button" id="sendbutton" data-bind="click: sendMessage" value="Send"></input>
 			</div>
 		</div>
 	</body>
