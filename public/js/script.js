@@ -3,7 +3,7 @@ var socket = new WebSocket('ws://' + location.hostname + ':8080');
 window.onload = function() {
 	var model = new (function() {
 		this.messages = ko.observableArray([]);
-		this.messagetext = ko.observable();
+		this.messagetext = ko.observable('');
 		
 		this.sendMessage = function() {
 			socket.send(this.messagetext());
@@ -27,14 +27,14 @@ window.onload = function() {
 		
 		if (m.notification) {
 			model.messages.push({
-				name: 'System',
+				name: 'System:',
 				message: m.message,
 				time: time
 			});
 		}
 		else {
 			model.messages.push({
-				name: m.author,
+				name: m.author + ':',
 				message: m.message,
 				time: time
 			});

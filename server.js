@@ -65,7 +65,10 @@ wss.on("connection", function(ws) {
 	broadcastNotification(name + ' connected!');
 	
 	ws.on('message', function(data) {
-		broadcastMessage(name, data);
+		if (data !== undefined && data !== '')
+		{
+			broadcastMessage(name, data);
+		}
 	});
 	
 	wss.on('close', function(data) {
