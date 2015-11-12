@@ -3,6 +3,7 @@ var fs = require('fs');
 var path = require('path');
 var mime = require('mime');
 var ws = require('ws');
+var db = require('./lib/db.js');
 
 var userIndex = 0;
 
@@ -46,36 +47,49 @@ var server = http.createServer(function(request, response) {
 
 var wss = ws.createServer({ port: 8080 });
 
-var broadcastMessage = function(author, message) {
+var broadcastMessage = function(message) {
 	console.log('Resending to ' + wss.clients.length + ' clients');
+	
 	wss.clients.forEach(function(client) {
-		client.send(JSON.stringify({ author: author, message: message }));
+		client.send(message);
 	});
 };
 
-var broadcastNotification = function(message) {
-	wss.clients.forEach(function(client) {
-		client.send(JSON.stringify({ notification: true, message: message }));
-	});
+var handleNotification = function(text) {
+	var message = JSON.stringify({ notification: true, text: text });
+	
+	broadcastMessage(message);
+	db.storeMessage(0, message);
+};
+
+var handleMessage = function(name, text) {
+	var message = JSON.stringify({ name: name, text: text });
+	
+	broadcastMessage(message);
+	db.storeMessage(0, message);
 };
 
 wss.on("connection", function(ws) {
 	var name = 'User' + ++userIndex;
 	
-	broadcastNotification(name + ' connected!');
+	db.retrieveMessages(0, function(error, data) {
+		for (var i = data.length - 1; i >= 0; --i) {
+			ws.send(data[i]);
+		}
+		
+		handleNotification(name + ' connected');
+	});
 	
 	ws.on('message', function(data) {
 		if (data !== undefined && data !== '')
 		{
-			broadcastMessage(name, data);
+			handleMessage(name, data);
 		}
 	});
 	
-	wss.on('close', function(data) {
-		broadcastNotification(name + ' disconnected');
+	ws.on('close', function(data) {
+		handleNotification(name + ' disconnected');
 	});
 });
-
-
 
 server.listen(80);

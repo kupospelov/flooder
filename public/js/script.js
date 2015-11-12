@@ -27,15 +27,15 @@ window.onload = function() {
 		
 		if (m.notification) {
 			model.messages.push({
-				name: 'System:',
-				message: m.message,
+				name: '',
+				text: m.text,
 				time: time
 			});
 		}
 		else {
 			model.messages.push({
-				name: m.author + ':',
-				message: m.message,
+				name: m.name + ':',
+				text: m.text,
 				time: time
 			});
 		}

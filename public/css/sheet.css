@@ -10,8 +10,7 @@ input {
 }
 
 input:focus {
-    outline: none !important;
-    box-shadow: 0 0 10px #FF8800;
+    outline-color: #FF8800;
 }
 
 input[type=text] {
@@ -39,6 +38,10 @@ input[type=text] {
 
 .msgtext {
     width: 100%;
+}
+
+.notification {
+    color: tan;
 }
 
 #header {

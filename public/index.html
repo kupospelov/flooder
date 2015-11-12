@@ -16,7 +16,7 @@
 					<tbody data-bind="foreach: messages">
 						<tr valign="top" class="message">
 							<td class="msgauthor" data-bind="text: name"></td>
-							<td class="msgtext" data-bind="text: message"></td>
+							<td class="msgtext" data-bind="text: text, css: { notification: name === '' }"></td>
 							<td class="msgtime" data-bind="text: time"></td>
 						</tr>
 					</tbody>
