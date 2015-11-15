@@ -1,0 +1,1 @@
+exports.tokenTimeout = 60 * 60;
