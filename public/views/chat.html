@@ -1,0 +1,19 @@
+<div class="container" id="chatroom" ng-controller="chatController">
+	<div id="chat">
+		<table>
+			<tbody>
+				<tr valign="top" class="message" ng-repeat="m in messages">
+					<td class="msgauthor">{{m.name}}</td>
+					<td class="msgtext">{{m.text}}</td>
+					<td class="msgtime">{{m.time}}</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<div id="footer">
+		<div class="input">
+			<input type="text" id="messagebox" placeholder="Type your message here..." autofocus ng-model="messageText"></input>
+			<input type="button" id="sendbutton" value="Send" ng-click="sendMessage()"></input>
+		</div>
+	</div>
+</div>

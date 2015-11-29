@@ -1,24 +1,27 @@
 var ws = require('ws');
 var db = require('./db.js');
+var config = require('./config.js');
 
 var userIndex = 0;
-var wss = ws.createServer({ port: 8080 });
+var wss = ws.createServer({ port: config.socketPort });
 
 wss.on("connection", function(ws) {
 	var name = 'User' + ++userIndex;
 	
 	db.retrieveMessages(0, function(error, data) {
 		for (var i = data.length - 1; i >= 0; --i) {
-			ws.send(data[i]);
+			if (!data[i].notification) {
+				ws.send(data[i]);
+			}
 		}
 		
 		exports.handleNotification(name + ' connected');
 	});
 	
 	ws.on('message', function(data) {
-		if (data !== undefined && data !== '')
-		{
-			handleMessage(name, data);
+		if (data !== undefined && data !== '') {
+			var message = JSON.parse(data);
+			exports.handleMessage(message.token, message.text);
 		}
 	});
 	
@@ -31,7 +34,9 @@ var broadcastMessage = function(message) {
 	console.log('Resending to ' + wss.clients.length + ' clients');
 	
 	wss.clients.forEach(function(client) {
-		client.send(message);
+		if (client.readyState === 1) {
+			client.send(message);
+		}
 	});
 };
 

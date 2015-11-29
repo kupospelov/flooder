@@ -1,53 +1,24 @@
-<html>
+<html ng-app="flooder">
 	<head>
 		<title>flooder</title>
 		<link rel="stylesheet" type="text/css" href="css/sheet.css">
 		<link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu:regular,bold&subset=Latin">
-		<script src="js/knockout-3.3.0.js"></script>
+		<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular.min.js"></script>
+		<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular-route.min.js"></script>
 		<script src="js/script.js"></script>
+		<base href="/">
 	</head>
-	<body>
+	<body ng-controller="mainController">
 		<div id="header">
 			<a href="/"><h1 class="logo">flooder</h1></a>
 			<span id="actions">
-				<span class="hidden" id="username" data-bind="text: userName, css: { hidden: !CREATEROOM() && !INROOM() }"></span>
-				<input type="button" class="action hidden" id="quit" data-bind="css: { hidden: !INROOM() }" value="Quit"></input>
-				<input type="button" class="action hidden" id="signout" data-bind="click: signOut, css: { hidden: !CREATEROOM() && !INROOM() }" value="Sign out"></input>
-				<input type="button" class="action hidden" id="signin" data-bind="click: openSignIn, css: { hidden: !REGISTER() }" value="Sign in"></input>
-				<input type="button" class="action hidden" id="register" data-bind="click: openRegister, css: { hidden: !SIGNIN() }" value="Register"></input>
+				<span class="hidden" id="username">{{userName}}</span>
+				<input type="button" class="action" id="quit" value="Quit"></input>
+				<input type="button" class="action hidden" id="signout" value="Sign out"></input>
+				<input type="button" class="action hidden" id="signin" value="Sign in"></input>
+				<input type="button" class="action hidden" id="register" value="Register"></input>
 			</span>
 		</div>
-		<div class="container form hidden" id="credentials" data-bind="css: { hidden: !SIGNIN() && !REGISTER() }">
-			<div class="line center" data-bind="css: { hidden: !SIGNIN() }">Please sign in</div>
-			<div class="line center" data-bind="css: { hidden: !REGISTER() }">Please enter your name and password</div>
-			<input type="text" class="line" data-bind="textInput: login" placeholder="Name"></input>
-			<input type="text" class="line" data-bind="textInput: password" placeholder="Password"></input>
-			<input type="button" class="line" data-bind="click: signIn, css: { hidden: !SIGNIN() }" value="Sign in"></input>
-			<input type="button" class="line" data-bind="click: register, css: { hidden: !REGISTER() }" value="Register"></input>
-		</div>
-		<div class="container form hidden" id="createroom" data-bind="css: { hidden: !CREATEROOM() }">
-			<div class="line center">Here you can create a new chat room</div>
-			<input type="text" class="line" placeholder="Room name"></input>
-			<input type="button" class="line" value="Create room"></input>
-		</div>
-		<div class="container hidden" id="chatroom" data-bind="css: { hidden: !INROOM() }">
-			<div id="chat">
-				<table>
-					<tbody data-bind="foreach: messages">
-						<tr valign="top" class="message">
-							<td class="msgauthor" data-bind="text: name"></td>
-							<td class="msgtext" data-bind="text: text, css: { notification: name === '' }"></td>
-							<td class="msgtime" data-bind="text: time"></td>
-						</tr>
-					</tbody>
-				</table>
-			</div>
-			<div id="footer">
-				<div class="input">
-					<input type="text" id="messagebox" data-bind="textInput: messageText, event: { keypress: keypressHandler }" placeholder="Type your message here..." autofocus></input>
-					<input type="button" id="sendbutton" data-bind="click: sendMessage" value="Send"></input>
-				</div>
-			</div>
-		</div>
+		<div ng-view></div>		
 	</body>
 </html>

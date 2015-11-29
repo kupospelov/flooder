@@ -1,14 +1,17 @@
-var http = require('http');
 var fs = require('fs');
 var path = require('path');
 var mime = require('mime');
+
+var express = require('express');
+var cookieParser = require('cookie-parser');
+var bodyParser = require('body-parser');
+
 var db = require('./db.js');
 var chat = require('./chat.js');
+var config = require('./config.js');
 
 function sendResponse(response, code, message) {
-	response.writeHead(code, { 'Content-Type': 'application/json' });
-	response.write(JSON.stringify(message));
-	response.end();
+	response.status(code).json(message);
 }
 
 function sendData(response, data) {
@@ -27,105 +30,55 @@ function sendServerError(response, message) {
 	sendResponse(response, 500, message || 'Server error');
 }
 
-function serveStaticContent(response, path)
-{
-	if (fs.exists) {
-		fs.readFile(path, function (error, data) {
-			if (error) {
-				sendNotFound(response);
-			}
-			else {
-				response.writeHead(200, { 'Content-Type': mime.lookup(path) });
-				response.end(data);
-			}
-		});
-	}
-	else {
-		sendNotFound(response);
-	}
-}
-
-function receiveData(request, handler) {
-	var body = '';
-	
-	request.on('data', function(data) {
-		body += data;
-	});
-	
-	request.on('end', function() {
-		handler(body);
+function sendPage(response, name) {
+		response.sendFile('index.html', { root: __dirname + '/../public/' }, function(error) {
+		if (error) {
+			sendNotFound(response);
+		}
 	});
 }
 
-var server = http.createServer(function(request, response) {	
-	switch (request.url) {
-		case '/api/knock':
-			if (request.method === 'POST') {
-				receiveData(request, function(data) {
-					var user = JSON.parse(data);
-					db.checkToken(user.token, function(error, name) {
-						sendData(response, { name: name });
-						
-						if (name) {
-							db.prolongToken(user.token, function(error) {
-								if (error) {
-									console.log('Error while prolonging token');
-								}
-							});
-						}
-					});
-				});
-				break;
-			}
-		
-		case '/api/signin':
-			if (request.method === 'POST') {
-				receiveData(request, function(data) {
-					var user = JSON.parse(data);
-					db.checkCredentials(user.login, user.password, function(error, reply) {
-						if (error) {
-							sendServerError(response, 'Error while checking credentials');
-						}
-						else {
-							if (reply) {
-								db.createToken(user.login, function(error, token) {
-									if (error) {
-										sendServerError(response, 'Error while creating token');	
-									}
-									else {
-										sendData(response, { name: user.login, token: token });
-									}
-								});
-							}
-							else {
-								sendNotAuthorized(response);
-							}
-						}
-					});
-				});
-				break;
-			}
-			
-		case '/api/signout':
-			if (request.method === 'POST') {
-				receiveData(request, function(data) {
-					var user = JSON.parse(data);
-					db.expireToken(user.token, function(error) {
-						if (error) {
-							console.log('Error while expiring token');
-						}
-						
-						sendData(response, 'OK');
-					});
-				});
-				break;
-			}
-			
-		default:
-			var path = request.url === '/' ? './public/index.html' : './public' + request.url;
-			serveStaticContent(response, path);
-			break;
-	}
+var app = express();
+app.use(cookieParser());
+app.use(bodyParser.json());
+
+app.get(['/', '/create', '/chat'], function(request, response) {
+	sendPage(response, 'index.html');
 });
 
-server.listen(80);
+app.get('/signin', function(request, response) {
+	sendPage(response, 'index.html');
+});
+
+app.post('/api/signout', function(request, response) {
+	// some sign out logic
+});
+
+app.post('/api/signin', function(request, response) {
+	var user = request.body;
+	
+	db.checkCredentials(user.login, user.password, function(error, reply) {
+		if (error) {
+			sendServerError(response, 'Error while checking credentials');
+		}
+		else {
+			if (reply) {
+				db.createToken(user.login, function(error, token) {
+					if (error) {
+						sendServerError(response, 'Error while creating token');	
+					}
+					else {
+						response.cookie('Token', token, { expires: new Date(Date.now() + config.tokenTimeout) });
+						response.sendStatus(200);
+					}
+				});
+			}
+			else {
+				sendNotAuthorized(response);
+			}
+		}
+	});
+});
+
+app.use(express.static('public'));
+app.listen(config.serverPort);
