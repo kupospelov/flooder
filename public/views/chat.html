@@ -1,4 +1,4 @@
-<div class="container" id="chatroom" ng-controller="chatController">
+<div class="container" id="chatroom">
 	<div id="chat">
 		<table>
 			<tbody>
@@ -11,9 +11,9 @@
 		</table>
 	</div>
 	<div id="footer">
-		<div class="input">
+		<form ng-submit="sendMessage()" class="input">
 			<input type="text" id="messagebox" placeholder="Type your message here..." autofocus ng-model="messageText"></input>
 			<input type="button" id="sendbutton" value="Send" ng-click="sendMessage()"></input>
-		</div>
+		</form>
 	</div>
 </div>

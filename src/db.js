@@ -12,14 +12,28 @@ var generateHash = function(text) {
 	var sha1 = crypto.createHash('sha1');
 	return sha1.update(text).digest('hex');
 }
-	
+
 // Messages
-exports.storeMessage = function(room, message) {
-	client.lpush('room:' + room, message);
+exports.storeMessage = function(room, message, handler) {
+	client.lpush('room:' + room, message, handler);
 };
 
 exports.retrieveMessages = function(room, handler) {
 	client.lrange('room:' + room, 0, -1, handler);
+};
+
+// Rooms
+exports.createRoom = function(message, handler) {
+    crypto.randomBytes(10, function(error, room) {
+        var roomid = room.toString('hex');
+        client.lpush('room:' + roomid, message, function() {
+            handler(null, roomid);
+        });
+    });
+};
+
+exports.checkRoom = function(room, handler) {
+    client.exists('room:' + room, handler);  
 };
 
 // Authorization
@@ -36,7 +50,7 @@ exports.createToken = function(login, handler) {
 		if (token) {
 			var tokenValue = token.toString('hex');
 			
-			client.set(tokenValue, login, function(error, reply) {
+			client.set('token:' + tokenValue, login, function(error, reply) {
 				if (error) {
 					handler(error);
 				}
@@ -56,7 +70,7 @@ exports.createToken = function(login, handler) {
 };
 
 exports.prolongToken = function(token, handler) {
-	client.expire(token, config.tokenTimeout, function(error, reply) {
+	client.expire('token:' + token, config.tokenTimeout, function(error, reply) {
 		if (error) {
 			handler(error);
 		}
@@ -71,11 +85,11 @@ exports.prolongToken = function(token, handler) {
 };
 
 exports.expireToken = function(token, handler) {
-	client.del(token, handler);	
+	client.del('token:' + token, handler);	
 };
 
 exports.checkToken = function(token, handler) {
-	client.get(token, function(error, login) {
+	client.get('token:' + token, function(error, login) {
 		if (error) {
 			handler(error);
 		}

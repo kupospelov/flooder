@@ -1,23 +1,25 @@
 <html ng-app="flooder">
 	<head>
 		<title>flooder</title>
-		<link rel="stylesheet" type="text/css" href="css/sheet.css">
+		<link rel="stylesheet" type="text/css" href="/css/sheet.css">
 		<link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu:regular,bold&subset=Latin">
 		<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular.min.js"></script>
 		<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular-route.min.js"></script>
-		<script src="js/script.js"></script>
+		<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular-cookies.min.js"></script>
+		<script src="/js/script.js"></script>
 		<base href="/">
 	</head>
 	<body ng-controller="mainController">
 		<div id="header">
-			<a href="/"><h1 class="logo">flooder</h1></a>
-			<span id="actions">
-				<span class="hidden" id="username">{{userName}}</span>
-				<input type="button" class="action" id="quit" value="Quit"></input>
-				<input type="button" class="action hidden" id="signout" value="Sign out"></input>
-				<input type="button" class="action hidden" id="signin" value="Sign in"></input>
-				<input type="button" class="action hidden" id="register" value="Register"></input>
+			<h1 class="logo">flooder</h1>
+			<span class="actions" ng-show="authorized">
+				<span id="username">{{userName}}</span>
+                <input type="button" class="action" id="create" ng-click="createRoom()" value="Create chat"></input>
+				<input type="button" class="action" id="signout" ng-click="signOut()" value="Sign out"></input>
 			</span>
+            <span class="actions" ng-show="!authorized">
+                <input type="button" class="action" value="Register"></input>
+            </span>
 		</div>
 		<div ng-view></div>		
 	</body>

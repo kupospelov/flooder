@@ -30,7 +30,7 @@ function sendServerError(response, message) {
 	sendResponse(response, 500, message || 'Server error');
 }
 
-function sendPage(response, name) {
+function sendIndex(response) {
 		response.sendFile('index.html', { root: __dirname + '/../public/' }, function(error) {
 		if (error) {
 			sendNotFound(response);
@@ -42,16 +42,43 @@ var app = express();
 app.use(cookieParser());
 app.use(bodyParser.json());
 
-app.get(['/', '/create', '/chat'], function(request, response) {
-	sendPage(response, 'index.html');
+app.get('/', function(request, response) {
+	db.checkToken(request.cookies.Token, function(error, name) {
+		if (error === null && name !== null) {
+			sendIndex(response);
+		}
+		else {
+			response.redirect('/signin');
+		}
+	});
+});
+
+app.get('/chat/:chatid', function(request, response) {
+    db.checkRoom(request.params.chatid, function(error, name) {
+        if (name) {
+            sendIndex(response);
+        }
+        else {
+            sendNotFound(response);
+        }
+    });
 });
 
 app.get('/signin', function(request, response) {
-	sendPage(response, 'index.html');
+	db.checkToken(request.cookies.Token, function(error, name) {
+		if (error === null && name !== null) {
+			response.redirect('/');
+		}
+		else {
+			sendIndex(response);
+		}
+	});
 });
 
 app.post('/api/signout', function(request, response) {
-	// some sign out logic
+	db.expireToken(request.cookies.Token, function() {
+		response.sendStatus(200);
+	});
 });
 
 app.post('/api/signin', function(request, response) {
@@ -68,8 +95,9 @@ app.post('/api/signin', function(request, response) {
 						sendServerError(response, 'Error while creating token');	
 					}
 					else {
-						response.cookie('Token', token, { expires: new Date(Date.now() + config.tokenTimeout) });
-						response.sendStatus(200);
+						sendData(response, {
+							token: token
+						});
 					}
 				});
 			}
@@ -78,6 +106,14 @@ app.post('/api/signin', function(request, response) {
 			}
 		}
 	});
+});
+
+app.post('/api/chat', function(request, response) {
+    db.createRoom('room was created', function(error, room) {
+        sendData(response, {
+            room: room
+        });
+    });
 });
 
 app.use(express.static('public'));

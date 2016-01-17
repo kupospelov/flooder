@@ -1,18 +1,45 @@
-var app = angular.module('flooder', ['ngRoute']);
+var app = angular.module('flooder', ['ngRoute', 'ngCookies']);
 
-app.controller('mainController', function($scope) {
-	$scope.userName = '123';
-	$scope.token = '123';
+app.controller('mainController', function($scope, $http, $location, $cookies) {
+	$scope.userName = localStorage.getItem('name');
+	$scope.token = $cookies.get('Token');
+	$scope.authorized = true;
+	
+    $scope.setAuthorized = function(value) {
+        $scope.authorized = value;
+    };
+    
+	$scope.signOut = function() {
+		$http.post('/api/signout', { }).then(function(response) {
+			localStorage.removeItem('name');
+			$cookies.remove('Token');
+			$location.path('/signin');
+		});
+	};
+    
+    $scope.createRoom = function() {
+        $http.post('/api/chat', { }).then(function(response) {
+            $location.path('/chat/' + response.data.room);
+        });
+    };
 });
 
-app.controller('chatController', function($scope) {
+app.controller('chatController', function($scope, $routeParams) {
 	var socket = new WebSocket('ws://' + location.hostname + ':8080');
+	socket.onopen = function() {
+		socket.send(JSON.stringify({
+			type: 'hello',
+            room: $routeParams.chatid,
+			token: $scope.token
+		}));
+	};
+    
 	socket.onmessage = function(message) {
 		var m = JSON.parse(message.data);
 		var date = new Date(m.time), hh = date.getHours(), mm = date.getMinutes();
 		var time = (hh < 10 ? '0' : '') + hh + ':' + (mm < 10 ? '0' : '') + mm;
 		
-		if (m.notification) {
+		if (m.type === 'notification') {
 			$scope.messages.push({
 				name: '',
 				text: m.text,
@@ -42,18 +69,24 @@ app.controller('chatController', function($scope) {
 	};
 });
 
-app.controller('signinController', function($scope, $http, $location) {
+app.controller('signinController', function($scope, $http, $location, $cookies) {
+	$scope.setAuthorized(false);
 	$scope.welcomeMessage = 'Please sign in';
 	$scope.buttonText = 'Sign in';
 	$scope.login = '';
 	$scope.password = '';
-	
+    
 	$scope.sendCredentials = function() {
 		$http.post('/api/signin', {
 			login: $scope.login,
 			password: $scope.password
 		}).then(function(response) {
-			$location.path('/create');
+            $scope.setAuthorized(true);
+			$scope.name = $scope.login;
+			$scope.token = response.data.token;
+			$cookies.put('Token', response.data.token);
+			localStorage.setItem('name', $scope.name);
+            $location.path('/');
 		});
 	};
 });
@@ -75,24 +108,21 @@ app.controller('signupController', function($scope) {
 
 app.config(function($routeProvider, $locationProvider) {
 	$routeProvider
-		.when('/chat', {
+		.when('/chat/:chatid', {
 			templateUrl: 'views/chat.html',
 			controller: 'chatController'
 		})
 		.when('/signin', {
-			templateUrl: 'views/enter.html',
+			templateUrl: 'views/signin.html',
 			controller: 'signinController'
 		})
 		.when('/signup', {
-			templateUrl: 'views/enter.html',
+			templateUrl: 'views/signin.html',
 			controller: 'signupController'
 		})
-		.when('/create', {
-			templateUrl: 'views/create.html',
-			controller: 'chatController'
-		})
 		.otherwise({
-			redirectTo: '/'
+			templateUrl: 'views/root.html',
+			controller: 'mainController'
 		});
 		
 	$locationProvider.html5Mode(true);
