@@ -165,9 +165,11 @@ app.config(function($routeProvider, $locationProvider) {
 			templateUrl: 'views/signup.html',
 			controller: 'signupController'
 		})
+        .when('/error', {
+            templateUrl: 'views/error.html'
+        })
 		.otherwise({
-			templateUrl: 'views/root.html',
-			controller: 'mainController'
+			templateUrl: 'views/root.html'
 		});
 		
 	$locationProvider.html5Mode(true);

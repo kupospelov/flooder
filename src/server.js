@@ -1,6 +1,5 @@
 var fs = require('fs');
 var path = require('path');
-var mime = require('mime');
 
 var express = require('express');
 var cookieParser = require('cookie-parser');
@@ -35,7 +34,7 @@ function sendServerError(response, message) {
 }
 
 function sendIndex(response) {
-		response.sendFile('index.html', { root: __dirname + '/../public/' }, function(error) {
+    response.sendFile('index.html', { root: __dirname + '/../public/' }, function(error) {
 		if (error) {
 			sendNotFound(response);
 		}
@@ -78,12 +77,12 @@ app.get('/chat/:chatid', isAuthenticated, function(request, response) {
             sendIndex(response);
         }
         else {
-            sendNotFound(response);
+            response.redirect('/error');
         }
     });
 });
 
-app.get(['/signin', '/signup'], function(request, response) {
+app.get(['/signin', '/signup', '/error'], function(request, response) {
     sendIndex(response);
 });
 
@@ -134,7 +133,7 @@ app.post('/api/chat', checkAuthorized, function(request, response) {
     });
 });
 
-app.post('/api/users', checkAuthorized, function(request, response) {
+app.post('/api/users', function(request, response) {
     var user = request.body;
     
     if (!user.login) {
