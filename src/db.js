@@ -9,8 +9,7 @@ client.on('error', function(error) {
 	
 // Helpers
 var generateHash = function(text) {
-	var sha1 = crypto.createHash('sha1');
-	return sha1.update(text).digest('hex');
+	return crypto.createHash('sha1').update(text).digest('hex');
 }
 
 // Messages
@@ -25,10 +24,15 @@ exports.retrieveMessages = function(room, handler) {
 // Rooms
 exports.createRoom = function(message, handler) {
     crypto.randomBytes(10, function(error, room) {
-        var roomid = room.toString('hex');
-        client.lpush('room:' + roomid, message, function() {
-            handler(null, roomid);
-        });
+        if (error) {
+            handler(new Error('Error while generating random value'));
+        }
+        else {        
+            var roomid = room.toString('hex');
+            client.lpush('room:' + roomid, message, function() {
+                handler(null, roomid);
+            });
+        }
     });
 };
 
@@ -41,45 +45,38 @@ exports.createUser = function(login, password, handler) {
 	client.hset('users', login, generateHash(password), handler);
 };
 
+exports.checkUser = function(login, handler) {
+    client.hget('users', login, function(error, token) {
+        handler(error, !!token);
+    });
+};
+
 exports.createToken = function(login, handler) {
 	crypto.randomBytes(32, function(error, token) {
-		if (error) {
-			handler(error);
-		}
-		
-		if (token) {
-			var tokenValue = token.toString('hex');
-			
-			client.set('token:' + tokenValue, login, function(error, reply) {
-				if (error) {
-					handler(error);
-				}
-		
-				if (reply) {
-					exports.prolongToken(tokenValue, handler);
-				}
-				else {
-					handler(new Error('Token was not set'))
-				}
-			});
-		}
-		else {
+		if (error || !token) {
 			handler(new Error('Token was not generated'));
 		}
+		else {
+            var tokenValue = token.toString('hex');
+            client.set('token:' + tokenValue, login, function(error, reply) {
+                if (error || !reply) {
+                    handler(new Error('Token was not set'));
+                }
+                else {
+                    exports.prolongToken(tokenValue, handler);
+                }
+            });
+        }
 	});
 };
 
 exports.prolongToken = function(token, handler) {
 	client.expire('token:' + token, config.tokenTimeout, function(error, reply) {
-		if (error) {
-			handler(error);
-		}
-		
-		if (reply) {
-			handler(null, token);
+		if (error || !reply) {
+			handler(new Error('Expiration was not set'));
 		}
 		else {
-			handler(new Error('Expiration was not set'));
+			handler(null, token);
 		}
 	});
 };
@@ -91,24 +88,26 @@ exports.expireToken = function(token, handler) {
 exports.checkToken = function(token, handler) {
 	client.get('token:' + token, function(error, login) {
 		if (error) {
-			handler(error);
+			handler(new Error('Error while retrieving token'));
 		}
-		
-		handler(null, login);
+		else {
+		  handler(null, login);
+        }
 	});
 };
 
 exports.checkCredentials = function(login, password, handler) {
 	client.hget('users', login, function(error, hash) {
 		if (error) {
-			handler(error);
-		}
-		
-		if (generateHash(password) == hash) {
-			handler(null, true);
+			handler(new Error('Error while retrieving storage object'));
 		}
 		else {
-			handler(null, false);	
-		}
+            if (generateHash(password) == hash) {
+                handler(null, true);
+            }
+            else {
+                handler(null, false);	
+            }
+        }
 	});
 };

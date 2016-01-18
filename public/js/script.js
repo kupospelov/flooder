@@ -1,12 +1,46 @@
-var app = angular.module('flooder', ['ngRoute', 'ngCookies']);
+var app = angular.module('flooder', ['ngRoute', 'ngCookies', 'ngAnimate']);
 
-app.controller('mainController', function($scope, $http, $location, $cookies) {
+app.controller('mainController', function($scope, $http, $location, $cookies, $timeout) {
 	$scope.userName = localStorage.getItem('name');
 	$scope.token = $cookies.get('Token');
 	$scope.authorized = true;
-	
+	$scope.toastText = '';
+    $scope.toastShown = false;
+    
+    var toastTimer = 0;
+    
     $scope.setAuthorized = function(value) {
         $scope.authorized = value;
+    };
+    
+    $scope.setUser = function(name, token) {
+        $scope.userName = name;
+        $scope.token = token;
+        localStorage.setItem('name', name);
+        $cookies.put('Token', token);
+    };
+    
+    $scope.showToast = function(text) {       
+        $timeout.cancel(toastTimer);
+        
+        $scope.toastText = text;
+        $scope.toastShown = true;
+        
+        toastTimer = $timeout(function() {
+            $scope.toastShown = false;
+        }, 4000);
+    };
+    
+    $scope.showError = function(text) {
+        $scope.showToast(text || 'Error occured');
+    };
+    
+    $scope.signIn = function() {
+        $location.path('/signin');  
+    };
+    
+    $scope.signUp = function() {
+        $location.path('/signup');
     };
     
 	$scope.signOut = function() {
@@ -22,6 +56,10 @@ app.controller('mainController', function($scope, $http, $location, $cookies) {
             $location.path('/chat/' + response.data.room);
         });
     };
+    
+    $scope.$on('$destroy', function() {
+        $timeout.cancel(toastTimer);
+    });
 });
 
 app.controller('chatController', function($scope, $routeParams) {
@@ -71,8 +109,6 @@ app.controller('chatController', function($scope, $routeParams) {
 
 app.controller('signinController', function($scope, $http, $location, $cookies) {
 	$scope.setAuthorized(false);
-	$scope.welcomeMessage = 'Please sign in';
-	$scope.buttonText = 'Sign in';
 	$scope.login = '';
 	$scope.password = '';
     
@@ -81,28 +117,37 @@ app.controller('signinController', function($scope, $http, $location, $cookies) 
 			login: $scope.login,
 			password: $scope.password
 		}).then(function(response) {
+            $scope.showToast('Authorization successful');
             $scope.setAuthorized(true);
-			$scope.name = $scope.login;
-			$scope.token = response.data.token;
-			$cookies.put('Token', response.data.token);
-			localStorage.setItem('name', $scope.name);
+            $scope.setUser(response.data.name, response.data.token);
             $location.path('/');
-		});
+		}, function(response) {
+            $scope.showError(response.data);            
+        });
 	};
 });
 
-app.controller('signupController', function($scope) {
-	$scope.welcomeMessage = 'Please enter your name and password';
-	$scope.buttonText = 'Register';
+app.controller('signupController', function($scope, $http, $location) {
+    $scope.setAuthorized(false);
 	$scope.login = '';
 	$scope.password = '';
-	
+	$scope.passwordRetyped = '';
+    
 	$scope.sendCredentials = function() {
-		$scope.socket.send(JSON.stringify({
-			type: 'signup',
-			login: $scope.login,
-			password: $scope.password
-		}));
+		if ($scope.password !== $scope.passwordRetyped) {
+            $scope.showToast('Passwords do not match');
+            return;
+        }
+        
+        $http.post('/api/users', {
+            login: $scope.login,
+            password: $scope.password
+        }).then(function(response) {
+            $scope.showToast('Registration successful');
+            $location.path('/signin');
+        }, function(response) {
+            $scope.showError(response.data);
+        });
 	};
 });
 
@@ -117,7 +162,7 @@ app.config(function($routeProvider, $locationProvider) {
 			controller: 'signinController'
 		})
 		.when('/signup', {
-			templateUrl: 'views/signin.html',
+			templateUrl: 'views/signup.html',
 			controller: 'signupController'
 		})
 		.otherwise({

@@ -12,7 +12,7 @@
 	</div>
 	<div id="footer">
 		<form ng-submit="sendMessage()" class="input">
-			<input type="text" id="messagebox" placeholder="Type your message here..." autofocus ng-model="messageText"></input>
+			<input type="text" id="messagebox" placeholder="Type your message here..." autocomplete="off" autofocus ng-model="messageText"></input>
 			<input type="button" id="sendbutton" value="Send" ng-click="sendMessage()"></input>
 		</form>
 	</div>

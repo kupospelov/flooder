@@ -6,10 +6,12 @@
 		<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular.min.js"></script>
 		<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular-route.min.js"></script>
 		<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular-cookies.min.js"></script>
+        <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular-animate.min.js"></script>        
 		<script src="/js/script.js"></script>
 		<base href="/">
 	</head>
 	<body ng-controller="mainController">
+        <div class="toast animate-show" ng-show="toastShown">{{toastText}}</div>
 		<div id="header">
 			<h1 class="logo">flooder</h1>
 			<span class="actions" ng-show="authorized">
@@ -18,7 +20,8 @@
 				<input type="button" class="action" id="signout" ng-click="signOut()" value="Sign out"></input>
 			</span>
             <span class="actions" ng-show="!authorized">
-                <input type="button" class="action" value="Register"></input>
+                <input type="button" class="action" value="Sign in" ng-click="signIn()"></input>
+                <input type="button" class="action" value="Sign up" ng-click="signUp()"></input>
             </span>
 		</div>
 		<div ng-view></div>		

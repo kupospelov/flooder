@@ -18,12 +18,16 @@ function sendData(response, data) {
 	sendResponse(response, 200, data);
 }
 
-function sendNotFound(response) {
-	sendResponse(response, 404, 'Nothing found');
+function sendNotFound(response, message) {
+	sendResponse(response, 404, message || 'Nothing found');
 }
 
-function sendNotAuthorized(response) {
-	sendResponse(response, 401, 'Not authorized');
+function sendNotAuthorized(response, message) {
+	sendResponse(response, 401, message || 'Authorization required');
+}
+
+function sendForbidden(response, message) {
+    sendResponse(response, 403, message || 'Wrong parameters')
 }
 
 function sendServerError(response, message) {
@@ -38,22 +42,37 @@ function sendIndex(response) {
 	});
 }
 
-var app = express();
-app.use(cookieParser());
-app.use(bodyParser.json());
-
-app.get('/', function(request, response) {
-	db.checkToken(request.cookies.Token, function(error, name) {
+function isAuthenticated(request, response, next) {
+    db.checkToken(request.cookies.Token, function(error, name) {
 		if (error === null && name !== null) {
-			sendIndex(response);
+			next();
 		}
 		else {
 			response.redirect('/signin');
 		}
 	});
+}
+
+function checkAuthorized(request, response, next) {
+    db.checkToken(request.cookies.Token, function(error, name) {
+		if (error === null && name !== null) {
+			next();
+		}
+		else {
+			sendNotAuthorized(response);
+		}
+	});
+}
+
+var app = express();
+app.use(cookieParser());
+app.use(bodyParser.json());
+
+app.get('/', isAuthenticated, function(request, response) {
+    sendIndex(response);
 });
 
-app.get('/chat/:chatid', function(request, response) {
+app.get('/chat/:chatid', isAuthenticated, function(request, response) {
     db.checkRoom(request.params.chatid, function(error, name) {
         if (name) {
             sendIndex(response);
@@ -64,18 +83,11 @@ app.get('/chat/:chatid', function(request, response) {
     });
 });
 
-app.get('/signin', function(request, response) {
-	db.checkToken(request.cookies.Token, function(error, name) {
-		if (error === null && name !== null) {
-			response.redirect('/');
-		}
-		else {
-			sendIndex(response);
-		}
-	});
+app.get(['/signin', '/signup'], function(request, response) {
+    sendIndex(response);
 });
 
-app.post('/api/signout', function(request, response) {
+app.post('/api/signout', checkAuthorized, function(request, response) {
 	db.expireToken(request.cookies.Token, function() {
 		response.sendStatus(200);
 	});
@@ -96,24 +108,53 @@ app.post('/api/signin', function(request, response) {
 					}
 					else {
 						sendData(response, {
+                            name: user.login,
 							token: token
 						});
 					}
 				});
 			}
 			else {
-				sendNotAuthorized(response);
+				sendForbidden(response, 'Wrong login or password');
 			}
 		}
 	});
 });
 
-app.post('/api/chat', function(request, response) {
-    db.createRoom('room was created', function(error, room) {
-        sendData(response, {
-            room: room
-        });
+app.post('/api/chat', checkAuthorized, function(request, response) {
+    db.createRoom('', function(error, room) {
+        if (error) {
+            sendServerError(response, 'Error while creating room');
+        }
+        else {
+            sendData(response, {
+                room: room
+            });
+        }
     });
+});
+
+app.post('/api/users', checkAuthorized, function(request, response) {
+    var user = request.body;
+    
+    if (!user.login) {
+        sendForbidden(response, 'Login cannot be empty');
+    }
+    else if (!user.password) {
+        sendForbidden(response, 'Password cannot be empty');
+    }
+    else {
+        db.checkUser(user.login, function(error, registered) {
+            if (registered) {
+                sendForbidden(response, 'User with the same name already exists');
+            }
+            else {
+                db.createUser(user.login, user.password, function(error, status) {
+                    response.sendStatus(200);
+                });
+            }
+        });
+    }
 });
 
 app.use(express.static('public'));

@@ -1,6 +1,6 @@
-<form class="container form" id="credentials">
-	<div class="line center">{{welcomeMessage}}</div>
+<form class="container form">
+	<div class="line center">Please type in your credentials</div>
 	<input type="text" class="line" placeholder="Name" ng-model="login"></input>
-	<input type="text" class="line" placeholder="Password" ng-model="password"></input>
-	<input type="button" class="line" value="{{buttonText}}" ng-click="sendCredentials()"></input>
+	<input type="password" class="line" placeholder="Password" ng-model="password"></input>
+	<input type="button" class="line" value="Sign in" ng-click="sendCredentials()"></input>
 </form>
